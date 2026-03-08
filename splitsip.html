@@ -1,0 +1,1169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NomNom Split — Bill Splitter</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@400;600;700;800&display=swap');
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #ff6eb4;
+    --bg2: #ff4da6;
+    --surface: #fff0f8;
+    --surface2: #ffe4f2;
+    --border: #ffb3d9;
+    --accent: #ffe600;
+    --accent2: #ffd000;
+    --text: #1a0010;
+    --muted: #b05080;
+    --green: #00c97a;
+    --green2: #009f60;
+    --radius: 20px;
+    --shadow: 0 4px 24px rgba(180,0,90,0.18);
+  }
+
+  body {
+    background: var(--bg);
+    background-image: radial-gradient(circle at 20% 20%, #ff9ed8 0%, transparent 50%),
+                      radial-gradient(circle at 80% 80%, #e0006e 0%, transparent 50%);
+    color: var(--text);
+    font-family: 'Nunito', sans-serif;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding-bottom: 80px;
+  }
+
+  /* ── Header ── */
+  header {
+    width: 100%;
+    padding: 20px 28px 18px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    background: rgba(255,255,255,0.15);
+    backdrop-filter: blur(8px);
+    border-bottom: 2px solid rgba(255,255,255,0.3);
+    position: sticky; top: 0; z-index: 50;
+  }
+  .logo {
+    font-family: 'Fredoka One', cursive;
+    font-size: 28px;
+    color: var(--accent);
+    text-shadow: 2px 2px 0 rgba(0,0,0,0.12);
+    letter-spacing: 0.5px;
+    line-height: 1;
+  }
+  .logo .split { color: #fff; }
+  .tagline {
+    margin-left: auto;
+    font-size: 13px;
+    color: rgba(255,255,255,0.85);
+    font-weight: 700;
+  }
+
+  /* ── Steps progress bar ── */
+  .steps-bar {
+    width: 100%;
+    max-width: 700px;
+    padding: 24px 24px 0;
+    display: flex;
+    align-items: center;
+    gap: 0;
+  }
+  .step-node {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    flex: 1;
+    position: relative;
+  }
+  .step-node:not(:last-child)::after {
+    content: '';
+    position: absolute;
+    top: 17px; left: 55%;
+    width: 90%; height: 3px;
+    background: rgba(255,255,255,0.3);
+    border-radius: 2px;
+    z-index: 0;
+  }
+  .step-node.done:not(:last-child)::after { background: var(--accent); }
+  .step-circle {
+    width: 34px; height: 34px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.25);
+    border: 2.5px solid rgba(255,255,255,0.4);
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'Fredoka One', cursive;
+    font-size: 16px;
+    color: rgba(255,255,255,0.7);
+    position: relative; z-index: 1;
+    transition: all 0.3s;
+  }
+  .step-node.active .step-circle {
+    background: var(--accent);
+    border-color: var(--accent2);
+    color: #1a0010;
+    box-shadow: 0 0 0 4px rgba(255,230,0,0.3);
+    transform: scale(1.1);
+  }
+  .step-node.done .step-circle {
+    background: var(--accent);
+    border-color: var(--accent2);
+    color: #1a0010;
+  }
+  .step-label {
+    font-size: 11px;
+    font-weight: 700;
+    color: rgba(255,255,255,0.7);
+    text-align: center;
+    white-space: nowrap;
+  }
+  .step-node.active .step-label,
+  .step-node.done .step-label { color: var(--accent); }
+
+  /* ── Main ── */
+  main {
+    width: 100%;
+    max-width: 700px;
+    padding: 28px 20px 40px;
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+  }
+
+  /* ── Cards ── */
+  .card {
+    background: var(--surface);
+    border-radius: var(--radius);
+    padding: 28px 24px;
+    box-shadow: var(--shadow);
+    margin-bottom: 20px;
+    border: 2px solid var(--border);
+  }
+  .card h2 {
+    font-family: 'Fredoka One', cursive;
+    font-size: 22px;
+    color: var(--bg2);
+    margin-bottom: 6px;
+    display: flex; align-items: center; gap: 10px;
+  }
+  .card .sub {
+    font-size: 13px;
+    color: var(--muted);
+    margin-bottom: 20px;
+    font-weight: 600;
+  }
+
+  /* ── Upload zone ── */
+  .upload-zone {
+    border: 3px dashed var(--border);
+    border-radius: 16px;
+    padding: 40px 24px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s;
+    position: relative;
+    overflow: hidden;
+    background: var(--surface2);
+  }
+  .upload-zone:hover, .upload-zone.drag {
+    border-color: var(--bg2);
+    background: #ffd6ee;
+  }
+  .upload-zone input[type=file] {
+    position: absolute; inset: 0; opacity: 0; cursor: pointer;
+  }
+  .upload-icon { font-size: 44px; margin-bottom: 12px; display: block; }
+  .upload-zone h3 {
+    font-family: 'Fredoka One', cursive;
+    font-size: 18px; color: var(--bg2); margin-bottom: 6px;
+  }
+  .upload-zone p { font-size: 13px; color: var(--muted); font-weight: 600; }
+  .btn-pink {
+    display: inline-block;
+    margin-top: 16px;
+    padding: 11px 26px;
+    background: var(--bg2);
+    color: var(--accent);
+    border-radius: 100px;
+    font-family: 'Fredoka One', cursive;
+    font-size: 15px;
+    letter-spacing: 0.3px;
+    border: none;
+    cursor: pointer;
+    transition: transform 0.15s, box-shadow 0.15s;
+    box-shadow: 0 3px 12px rgba(220,0,100,0.25);
+    pointer-events: none;
+  }
+  .upload-zone:hover .btn-pink { transform: scale(1.05); }
+  .btn-yellow {
+    padding: 12px 26px;
+    background: var(--accent);
+    color: var(--text);
+    border-radius: 100px;
+    font-family: 'Fredoka One', cursive;
+    font-size: 15px;
+    border: none;
+    cursor: pointer;
+    transition: transform 0.15s, box-shadow 0.15s;
+    box-shadow: 0 3px 12px rgba(200,160,0,0.3);
+    display: inline-flex; align-items: center; gap: 8px;
+  }
+  .btn-yellow:hover { transform: scale(1.04); }
+  .btn-yellow:disabled { opacity: 0.45; cursor: not-allowed; transform: none; }
+  .btn-outline {
+    padding: 11px 22px;
+    background: transparent;
+    color: var(--bg2);
+    border: 2px solid var(--border);
+    border-radius: 100px;
+    font-family: 'Fredoka One', cursive;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .btn-outline:hover { background: var(--surface2); border-color: var(--bg2); }
+
+  /* ── Preview ── */
+  .preview-row {
+    display: flex; gap: 16px; align-items: flex-start;
+    margin-bottom: 16px;
+  }
+  .preview-img {
+    width: 110px; height: 110px;
+    border-radius: 14px;
+    object-fit: cover;
+    border: 3px solid var(--border);
+    flex-shrink: 0;
+  }
+  .preview-text h3 { font-family: 'Fredoka One', cursive; font-size: 16px; color: var(--bg2); margin-bottom: 4px; }
+  .preview-text p { font-size: 13px; color: var(--muted); font-weight: 600; line-height: 1.5; }
+
+  /* ── Spinner ── */
+  .spinner {
+    display: none; align-items: center; gap: 14px;
+    padding: 20px; background: var(--surface2); border-radius: 14px;
+    border: 2px solid var(--border);
+  }
+  .spinner.show { display: flex; }
+  .spin-ring {
+    width: 30px; height: 30px;
+    border: 3px solid var(--border);
+    border-top-color: var(--bg2);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite; flex-shrink: 0;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .spinner p { font-size: 14px; color: var(--muted); font-weight: 600; }
+  .spinner p strong { color: var(--bg2); display: block; font-size: 15px; margin-bottom: 2px; }
+
+  /* ── Error ── */
+  .error-box {
+    display: none;
+    background: #fff0f0; border: 2px solid #ffb3b3;
+    border-radius: 12px; padding: 14px 18px;
+    font-size: 14px; color: #c00; font-weight: 600;
+  }
+  .error-box.show { display: block; }
+
+  /* ── People section ── */
+  .people-list { display: flex; flex-direction: column; gap: 10px; margin-bottom: 16px; }
+  .person-row {
+    display: flex; align-items: center; gap: 10px;
+  }
+  .person-avatar {
+    width: 36px; height: 36px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px; flex-shrink: 0;
+    border: 2px solid var(--border);
+  }
+  .person-row input[type=text] {
+    flex: 1;
+    padding: 10px 14px;
+    border-radius: 100px;
+    border: 2px solid var(--border);
+    font-family: 'Nunito', sans-serif;
+    font-size: 14px; font-weight: 700;
+    background: var(--surface2);
+    color: var(--text);
+    outline: none;
+    transition: border-color 0.15s;
+  }
+  .person-row input[type=text]:focus { border-color: var(--bg2); }
+  .btn-remove {
+    width: 30px; height: 30px; border-radius: 50%;
+    border: 2px solid var(--border);
+    background: var(--surface2);
+    color: var(--muted);
+    font-size: 16px;
+    cursor: pointer; display: flex; align-items: center; justify-content: center;
+    transition: all 0.15s; flex-shrink: 0;
+  }
+  .btn-remove:hover { background: #ffd6ee; border-color: var(--bg2); color: var(--bg2); }
+  .btn-add-person {
+    display: flex; align-items: center; gap: 8px;
+    padding: 10px 20px;
+    background: var(--surface2);
+    border: 2px dashed var(--border);
+    border-radius: 100px;
+    font-family: 'Fredoka One', cursive;
+    font-size: 14px; color: var(--muted);
+    cursor: pointer;
+    transition: all 0.15s;
+    width: fit-content;
+  }
+  .btn-add-person:hover { border-color: var(--bg2); color: var(--bg2); background: #ffd6ee; }
+
+  /* ── Person tabs ── */
+  .person-tabs {
+    display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 20px;
+  }
+  .person-tab {
+    padding: 9px 18px;
+    border-radius: 100px;
+    border: 2.5px solid var(--border);
+    background: var(--surface2);
+    font-family: 'Fredoka One', cursive;
+    font-size: 14px; color: var(--muted);
+    cursor: pointer;
+    transition: all 0.18s;
+  }
+  .person-tab.active {
+    background: var(--bg2); border-color: var(--bg2);
+    color: var(--accent);
+    box-shadow: 0 3px 12px rgba(200,0,90,0.2);
+  }
+  .person-tab .tab-dot { margin-right: 4px; }
+
+  /* ── Items grid ── */
+  .items-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+    gap: 12px;
+  }
+  .item-card {
+    background: var(--surface2);
+    border: 2.5px solid var(--border);
+    border-radius: 14px;
+    padding: 16px;
+    cursor: pointer;
+    transition: all 0.18s;
+    user-select: none;
+    position: relative;
+    overflow: hidden;
+  }
+  .item-card:hover { border-color: var(--bg2); background: #ffd6ee; transform: translateY(-2px); }
+  .item-card.selected {
+    border-color: var(--bg2);
+    background: linear-gradient(135deg, #ffd6ee, #ffe4f2);
+    box-shadow: 0 4px 16px rgba(200,0,90,0.15);
+  }
+  .item-card.selected::after {
+    content: '✓';
+    position: absolute; top: 10px; right: 12px;
+    width: 22px; height: 22px;
+    background: var(--bg2); color: var(--accent);
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 13px; font-weight: 900; line-height: 22px; text-align: center;
+  }
+  .item-emoji { font-size: 26px; margin-bottom: 8px; display: block; }
+  .item-name {
+    font-family: 'Fredoka One', cursive;
+    font-size: 14px; margin-bottom: 3px; color: var(--text);
+    padding-right: 18px;
+  }
+  .item-desc { font-size: 11px; color: var(--muted); line-height: 1.4; margin-bottom: 8px; font-weight: 600; }
+  .item-price { font-weight: 800; font-size: 15px; color: var(--bg2); }
+
+  /* ── Qty ── */
+  .qty-row {
+    display: flex; align-items: center; gap: 8px; margin-top: 8px;
+  }
+  .qty-btn {
+    width: 26px; height: 26px; border-radius: 50%;
+    border: 2px solid var(--border); background: var(--surface);
+    color: var(--bg2); font-size: 15px; font-weight: 900;
+    cursor: pointer; display: flex; align-items: center; justify-content: center;
+    transition: all 0.15s;
+  }
+  .qty-btn:hover { background: var(--bg2); color: var(--accent); border-color: var(--bg2); }
+  .qty-num { font-family: 'Fredoka One', cursive; font-size: 15px; min-width: 16px; text-align: center; color: var(--bg2); }
+
+  .person-done-bar {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-top: 20px; padding-top: 16px;
+    border-top: 2px solid var(--border);
+  }
+  .person-done-bar .sel-count { font-size: 13px; font-weight: 700; color: var(--muted); }
+
+  /* ── Bill section ── */
+  .bill-card {
+    background: var(--surface);
+    border: 2.5px solid var(--border);
+    border-radius: 20px;
+    overflow: hidden;
+    box-shadow: var(--shadow);
+    margin-bottom: 16px;
+  }
+  .bill-header {
+    background: linear-gradient(135deg, var(--bg2), #ff1a8c);
+    padding: 18px 22px;
+    display: flex; align-items: center; gap: 12px;
+  }
+  .bill-avatar {
+    width: 44px; height: 44px; border-radius: 50%;
+    background: rgba(255,255,255,0.2);
+    border: 2.5px solid rgba(255,255,255,0.4);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 22px;
+  }
+  .bill-name {
+    font-family: 'Fredoka One', cursive;
+    font-size: 20px; color: #fff;
+    text-shadow: 1px 1px 0 rgba(0,0,0,0.1);
+  }
+  .bill-total {
+    margin-left: auto;
+    font-family: 'Fredoka One', cursive;
+    font-size: 26px;
+    color: var(--accent);
+    text-shadow: 1px 1px 0 rgba(0,0,0,0.1);
+  }
+  .bill-items { padding: 16px 22px; }
+  .bill-item-row {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 9px 0;
+    border-bottom: 1px solid var(--border);
+    font-size: 14px; font-weight: 600;
+  }
+  .bill-item-row:last-child { border: none; }
+  .bill-item-left { display: flex; align-items: center; gap: 8px; }
+  .bill-item-price { color: var(--bg2); font-weight: 800; font-size: 15px; }
+
+  /* ── Grand total ── */
+  .grand-total-card {
+    background: linear-gradient(135deg, var(--accent), #ffb300);
+    border-radius: var(--radius);
+    padding: 22px 24px;
+    display: flex; align-items: center; justify-content: space-between;
+    box-shadow: 0 6px 24px rgba(200,150,0,0.3);
+    margin-bottom: 20px;
+  }
+  .grand-total-card .label {
+    font-family: 'Fredoka One', cursive;
+    font-size: 18px; color: var(--text);
+  }
+  .grand-total-card .label small {
+    display: block; font-family: 'Nunito', sans-serif;
+    font-size: 12px; font-weight: 600; color: rgba(26,0,16,0.6); margin-top: 2px;
+  }
+  .grand-total-card .amount {
+    font-family: 'Fredoka One', cursive;
+    font-size: 34px; color: var(--text);
+  }
+
+  .btn-restart {
+    width: 100%;
+    padding: 15px;
+    background: var(--bg2);
+    color: var(--accent);
+    border: none;
+    border-radius: 100px;
+    font-family: 'Fredoka One', cursive;
+    font-size: 17px;
+    cursor: pointer;
+    transition: transform 0.15s;
+    box-shadow: 0 4px 16px rgba(200,0,90,0.25);
+    display: flex; align-items: center; justify-content: center; gap: 10px;
+  }
+  .btn-restart:hover { transform: scale(1.02); }
+
+  /* ── Util ── */
+  .hidden { display: none !important; }
+  .row-btns { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+
+  @media (max-width: 520px) {
+    .tagline { display: none; }
+    .preview-row { flex-direction: column; }
+    .steps-bar { gap: 2px; }
+    .step-label { font-size: 9px; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">🍕 Nom<span class="split">Nom</span>Split</div>
+  <span class="tagline">Snap receipt · Split instantly 💸</span>
+</header>
+
+<!-- Steps bar -->
+<div class="steps-bar" id="stepsBar">
+  <div class="step-node active" id="sn1">
+    <div class="step-circle">1</div>
+    <div class="step-label">Upload Receipt</div>
+  </div>
+  <div class="step-node" id="sn2">
+    <div class="step-circle">2</div>
+    <div class="step-label">Add People</div>
+  </div>
+  <div class="step-node" id="sn3">
+    <div class="step-circle">3</div>
+    <div class="step-label">Pick Orders</div>
+  </div>
+  <div class="step-node" id="sn4">
+    <div class="step-circle">4</div>
+    <div class="step-label">Split Bill</div>
+  </div>
+</div>
+
+<main>
+
+  <!-- ── STEP 1: Upload ── -->
+  <div class="card" id="step1">
+    <h2>🧾 Upload the Receipt</h2>
+    <p class="sub">Snap a photo of your restaurant receipt — we'll pull out every item & price!</p>
+
+    <div class="upload-zone" id="uploadZone">
+      <input type="file" id="fileInput" accept="image/*">
+      <span class="upload-icon">🧾</span>
+      <h3>Drop your receipt here</h3>
+      <p>or click to browse your photos</p>
+      <span class="btn-pink">Choose Photo</span>
+    </div>
+
+    <div class="preview-row hidden" id="previewRow">
+      <img class="preview-img" id="previewImg" src="" alt="Receipt">
+      <div class="preview-text">
+        <h3>Receipt ready! 🧾</h3>
+        <p>NomNomSplit will scan this receipt and pull out every item ordered. Hit the button to go!</p>
+        <div style="display:flex;gap:10px;margin-top:12px;flex-wrap:wrap;">
+          <button class="btn-yellow" id="analyzeBtn" onclick="analyzeMenu()">✨ Scan Receipt</button>
+          <button class="btn-outline" onclick="changePhoto()">Change photo</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="spinner" id="spinner" style="margin-top:16px;">
+      <div class="spin-ring"></div>
+      <p><strong>Reading your receipt…</strong>Extracting items & prices 🧾</p>
+    </div>
+    <div class="error-box" id="errorBox"></div>
+  </div>
+
+  <!-- ── STEP 2: Add People ── -->
+  <div class="card hidden" id="step2">
+    <h2>👯 Who's at the Table?</h2>
+    <p class="sub">Add everyone who's eating — you can rename them whatever you like!</p>
+    <div class="people-list" id="peopleList"></div>
+    <button class="btn-add-person" onclick="addPerson()">➕ Add another person</button>
+    <div style="margin-top:20px; border-top:2px solid var(--border); padding-top:16px;">
+      <button class="btn-yellow" onclick="goToStep3()">Next: Pick Orders →</button>
+    </div>
+  </div>
+
+  <!-- ── STEP 3: Pick per person ── -->
+  <div class="card hidden" id="step3">
+    <h2>🛒 Who Ordered What?</h2>
+    <p class="sub">Tap a person, then tap the items they ordered!</p>
+    <div class="person-tabs" id="personTabs"></div>
+    <div id="personName" style="font-family:'Fredoka One',cursive;font-size:17px;color:var(--bg2);margin-bottom:12px;"></div>
+    <div class="items-grid" id="itemsGrid"></div>
+    <div class="person-done-bar">
+      <span class="sel-count" id="selCount"></span>
+      <div class="row-btns">
+        <button class="btn-outline" id="prevPersonBtn" onclick="prevPerson()">← Back</button>
+        <button class="btn-yellow" id="nextPersonBtn" onclick="nextPerson()">Next person →</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── STEP 3.5: Tip ── -->
+  <div class="card hidden" id="stepTip">
+    <h2>💸 Add a Tip?</h2>
+    <p class="sub">Tip is split proportionally based on what each person ordered.</p>
+
+    <div class="tip-presets" id="tipPresets">
+      <button class="tip-btn" onclick="selectTip(15)">15%</button>
+      <button class="tip-btn" onclick="selectTip(18)">18%</button>
+      <button class="tip-btn" onclick="selectTip(20)">20%</button>
+      <button class="tip-btn" onclick="selectTip(25)">25%</button>
+      <button class="tip-btn tip-no" onclick="selectTip(0)">No tip</button>
+    </div>
+
+    <div class="tip-custom-row">
+      <span style="font-weight:700;color:var(--muted);font-size:14px;">Or custom:</span>
+      <div class="tip-input-wrap">
+        <input type="number" id="customTipInput" min="0" max="100" placeholder="e.g. 22" oninput="onCustomTip(this.value)">
+        <span class="tip-pct-label">%</span>
+      </div>
+    </div>
+
+    <div class="tip-preview" id="tipPreview"></div>
+
+    <div style="margin-top:20px; border-top:2px solid var(--border); padding-top:16px; display:flex; gap:10px; flex-wrap:wrap;">
+      <button class="btn-outline" onclick="goBackToStep3()">← Back</button>
+      <button class="btn-yellow" onclick="buildBill()">🧾 See the Bill →</button>
+    </div>
+  </div>
+
+  <!-- ── STEP 4: Split Bill ── -->
+  <div class="hidden" id="step4">
+    <div class="grand-total-card">
+      <div class="label">💰 Grand Total<small id="tipSummaryLabel"></small></div>
+      <div class="amount" id="grandTotal">$0.00</div>
+    </div>
+    <div id="billCards"></div>
+    <button class="btn-restart" onclick="resetApp()">🔄 Start a New Split</button>
+  </div>
+
+</main>
+
+<style>
+  /* ── Tip styles ── */
+  .tip-presets { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 16px; }
+  .tip-btn {
+    padding: 11px 20px;
+    border-radius: 100px;
+    border: 2.5px solid var(--border);
+    background: var(--surface2);
+    font-family: 'Fredoka One', cursive;
+    font-size: 16px; color: var(--muted);
+    cursor: pointer; transition: all 0.18s;
+  }
+  .tip-btn:hover { border-color: var(--bg2); color: var(--bg2); background: #ffd6ee; }
+  .tip-btn.active { background: var(--bg2); border-color: var(--bg2); color: var(--accent); box-shadow: 0 3px 12px rgba(200,0,90,0.2); }
+  .tip-btn.tip-no { border-style: dashed; }
+  .tip-custom-row { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; }
+  .tip-input-wrap { position: relative; display: flex; align-items: center; }
+  .tip-input-wrap input {
+    width: 90px; padding: 10px 30px 10px 14px;
+    border-radius: 100px; border: 2px solid var(--border);
+    font-family: 'Fredoka One', cursive; font-size: 16px;
+    background: var(--surface2); color: var(--text);
+    outline: none; transition: border-color 0.15s;
+  }
+  .tip-input-wrap input:focus { border-color: var(--bg2); }
+  .tip-pct-label { position: absolute; right: 12px; font-family: 'Fredoka One', cursive; font-size: 15px; color: var(--muted); pointer-events: none; }
+  .tip-preview {
+    background: var(--surface2); border-radius: 14px;
+    padding: 14px 18px; font-size: 13px; font-weight: 600;
+    color: var(--muted); line-height: 1.8; min-height: 48px;
+    border: 2px solid var(--border);
+  }
+  .tip-preview strong { color: var(--bg2); }
+
+  /* ── Venmo button ── */
+  .btn-venmo {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 11px 20px;
+    background: #3d95ce;
+    color: #fff;
+    border: none; border-radius: 100px;
+    font-family: 'Fredoka One', cursive; font-size: 14px;
+    cursor: pointer; transition: transform 0.15s, opacity 0.15s;
+    box-shadow: 0 3px 12px rgba(61,149,206,0.35);
+    text-decoration: none;
+  }
+  .btn-venmo:hover { transform: scale(1.05); opacity: 0.93; }
+  .bill-footer { padding: 14px 22px; border-top: 2px solid var(--border); display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; }
+  .item-stock {
+    font-size: 11px; font-weight: 700; color: var(--muted);
+    background: var(--surface); border-radius: 100px;
+    padding: 2px 8px; border: 1.5px solid var(--border);
+  }
+  .item-stock.stock-empty { color: var(--bg2); border-color: var(--bg2); background: #ffd6ee; }
+  .item-card.maxed { opacity: 0.5; cursor: not-allowed; }
+  .item-card.maxed:hover { transform: none; border-color: var(--border); background: var(--surface2); }
+  .qty-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+
+  /* ── Receipt reconciliation bar ── */
+  .reconcile-bar {
+    background: var(--surface);
+    border: 2.5px solid var(--border);
+    border-radius: var(--radius);
+    padding: 18px 22px;
+    margin-bottom: 20px;
+    box-shadow: var(--shadow);
+  }
+  .reconcile-bar h3 {
+    font-family: 'Fredoka One', cursive;
+    font-size: 16px; color: var(--bg2); margin-bottom: 12px;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .reconcile-track {
+    background: var(--surface2);
+    border-radius: 100px; height: 14px;
+    overflow: hidden; margin-bottom: 8px;
+    border: 1.5px solid var(--border);
+  }
+  .reconcile-fill {
+    height: 100%; border-radius: 100px;
+    transition: width 0.6s cubic-bezier(0.34,1.56,0.64,1);
+    background: linear-gradient(90deg, var(--bg2), #ff80c0);
+  }
+  .reconcile-fill.full { background: linear-gradient(90deg, var(--green), #00e68a); }
+  .reconcile-fill.over { background: linear-gradient(90deg, #ff4444, #ff8800); }
+  .reconcile-stats {
+    display: flex; justify-content: space-between; align-items: center;
+    font-size: 13px; font-weight: 700;
+  }
+  .reconcile-stats .claimed { color: var(--bg2); }
+  .reconcile-stats .claimed.full { color: var(--green2); }
+  .reconcile-stats .receipt-total { color: var(--muted); }
+  .reconcile-warning {
+    margin-top: 10px; padding: 10px 14px;
+    background: #fff8e0; border: 2px solid #ffe066;
+    border-radius: 10px; font-size: 12px; font-weight: 700; color: #a07000;
+  }
+  .reconcile-ok {
+    margin-top: 10px; padding: 10px 14px;
+    background: #e6fff4; border: 2px solid #80efc0;
+    border-radius: 10px; font-size: 12px; font-weight: 700; color: #007a40;
+  }
+</style>
+
+<script>
+  // ── State ──
+  let imageBase64 = null;
+  let menuItems = [];
+  let people = [];
+  let currentPersonIdx = 0;
+  let tipPct = 0;
+  let subtotals = {}; // personIdx -> subtotal before tip
+  const EMOJIS = ['🧑','👩','🧔','👱','🙋','🤷','🧝','🧜','🦸','🧙'];
+
+  // ── Steps ──
+  function setStep(n) {
+    [1,2,3,4].forEach(i => {
+      const sn = document.getElementById('sn'+i);
+      sn.className = 'step-node' + (i < n ? ' done' : i === n ? ' active' : '');
+    });
+  }
+
+  // ── Drag & Drop ──
+  const zone = document.getElementById('uploadZone');
+  zone.addEventListener('dragover', e => { e.preventDefault(); zone.classList.add('drag'); });
+  zone.addEventListener('dragleave', () => zone.classList.remove('drag'));
+  zone.addEventListener('drop', e => {
+    e.preventDefault(); zone.classList.remove('drag');
+    const f = e.dataTransfer.files[0];
+    if (f && f.type.startsWith('image/')) handleFile(f);
+  });
+  document.getElementById('fileInput').addEventListener('change', e => {
+    if (e.target.files[0]) handleFile(e.target.files[0]);
+  });
+
+  function handleFile(file) {
+    const reader = new FileReader();
+    reader.onload = ev => {
+      imageBase64 = ev.target.result.split(',')[1];
+      document.getElementById('previewImg').src = ev.target.result;
+      show('previewRow'); hide('uploadZone');
+      hide('errorBox'); hide('spinner');
+    };
+    reader.readAsDataURL(file);
+  }
+
+  function changePhoto() {
+    hide('previewRow'); show('uploadZone');
+    document.getElementById('fileInput').value = '';
+    imageBase64 = null;
+  }
+
+  // ── Analyze ──
+  async function analyzeMenu() {
+    if (!imageBase64) return;
+    const btn = document.getElementById('analyzeBtn');
+    btn.disabled = true;
+    show('spinner'); hide('errorBox');
+    try {
+      const res = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          model: 'claude-sonnet-4-20250514',
+          max_tokens: 1000,
+          system: `You are a receipt parser. The user will send you a photo of a restaurant receipt.
+Extract every distinct line item that was ordered and charged for.
+Respond ONLY with a valid JSON array, no markdown, no preamble.
+Each object: { "id": "item_1", "name": "string", "description": "very short description", "price": 12.5, "qty": 2, "emoji": "🍕" }
+- "price" is the UNIT price (per single item), EXACT from receipt
+- "qty" is the total quantity of that item on the receipt (e.g. if receipt says "2x Burger $8.00" then price=8.00, qty=2)
+- If no quantity shown, qty=1
+- Do NOT combine duplicates — keep each line item separate
+If you cannot read the receipt clearly, do your best. If it's not a receipt at all, return [].`,
+          messages: [{
+            role: 'user',
+            content: [
+              { type: 'image', source: { type: 'base64', media_type: 'image/jpeg', data: imageBase64 } },
+              { type: 'text', text: 'Extract all line items from this receipt.' }
+            ]
+          }]
+        })
+      });
+      const data = await res.json();
+      if (data.error) throw new Error(data.error.message);
+      const raw = data.content.map(b => b.text||'').join('');
+      menuItems = JSON.parse(raw.replace(/```json|```/g,'').trim());
+      if (!Array.isArray(menuItems) || !menuItems.length) throw new Error("Couldn't find items on the receipt. Try a clearer photo!");
+      hide('spinner');
+      setStep(2); show('step2'); initPeople();
+    } catch(e) {
+      hide('spinner');
+      const eb = document.getElementById('errorBox');
+      eb.textContent = '⚠️ ' + (e.message || 'Something went wrong!');
+      show('errorBox');
+    } finally {
+      btn.disabled = false;
+    }
+  }
+
+  // ── People ──
+  function initPeople() {
+    people = [
+      { id: 'p0', name: 'Person 1', emoji: EMOJIS[0], orders: {}, venmo: '' },
+      { id: 'p1', name: 'Person 2', emoji: EMOJIS[1], orders: {}, venmo: '' },
+    ];
+    renderPeopleList();
+  }
+
+  function renderPeopleList() {
+    const list = document.getElementById('peopleList');
+    list.innerHTML = people.map((p, i) => `
+      <div class="person-row">
+        <div class="person-avatar">${p.emoji}</div>
+        <input type="text" value="${esc(p.name)}" oninput="people[${i}].name=this.value" placeholder="Name...">
+        ${people.length > 2 ? `<button class="btn-remove" onclick="removePerson(${i})">✕</button>` : '<div style="width:30px"></div>'}
+      </div>
+    `).join('');
+  }
+
+  function addPerson() {
+    const idx = people.length;
+    people.push({ id: 'p'+Date.now(), name: 'Person '+(idx+1), emoji: EMOJIS[idx % EMOJIS.length], orders: {}, venmo: '' });
+    renderPeopleList();
+  }
+
+  function removePerson(i) {
+    people.splice(i, 1);
+    renderPeopleList();
+  }
+
+  function goToStep3() {
+    const inputs = document.querySelectorAll('#peopleList input');
+    inputs.forEach((inp, i) => { if(people[i]) people[i].name = inp.value || ('Person '+(i+1)); });
+    people.forEach(p => p.orders = {});
+    currentPersonIdx = 0;
+    setStep(3); show('step3');
+    renderPersonTabs(); renderItemsForPerson();
+  }
+
+  // ── Per-person items ──
+  function renderPersonTabs() {
+    const tabs = document.getElementById('personTabs');
+    tabs.innerHTML = people.map((p, i) => `
+      <div class="person-tab ${i===currentPersonIdx?'active':''}" onclick="switchPerson(${i})">
+        <span class="tab-dot">${p.emoji}</span>${esc(p.name)}
+      </div>
+    `).join('');
+  }
+
+  function switchPerson(i) {
+    currentPersonIdx = i;
+    renderPersonTabs(); renderItemsForPerson();
+  }
+
+  function renderItemsForPerson() {
+    const p = people[currentPersonIdx];
+    document.getElementById('personName').textContent = `${p.emoji} ${p.name}'s order:`;
+    const grid = document.getElementById('itemsGrid');
+    grid.innerHTML = menuItems.map(item => {
+      const maxQty = item.qty || 1;
+      const myQty = p.orders[item.id] || 0;
+      const sel = myQty > 0;
+      // total claimed by ALL people for this item
+      const totalClaimed = people.reduce((s, per) => s + (per.orders[item.id] || 0), 0);
+      const remaining = maxQty - totalClaimed;
+      // can this person still add one more?
+      const canAdd = remaining > 0;
+      return `
+        <div class="item-card ${sel?'selected':''} ${!sel && !canAdd ? 'maxed':''}` +
+          `" id="icard_${item.id}" onclick="toggleItemForPerson('${item.id}')">
+          <span class="item-emoji">${item.emoji}</span>
+          <div class="item-name">${esc(item.name)}</div>
+          <div class="item-desc">${esc(item.description)}</div>
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;">
+            <div class="item-price">$${Number(item.price).toFixed(2)}</div>
+            <div class="item-stock ${totalClaimed >= maxQty && myQty === 0 ? 'stock-empty' : ''}" id="stock_${item.id}">
+              ${totalClaimed}/${maxQty} claimed
+            </div>
+          </div>
+          <div class="qty-row" id="iqty_${item.id}" style="${sel?'':'display:none'}" onclick="event.stopPropagation()">
+            <button class="qty-btn" onclick="changeItemQty('${item.id}',-1)">−</button>
+            <span class="qty-num" id="iqnum_${item.id}">${myQty||1}</span>
+            <button class="qty-btn" id="qplus_${item.id}" onclick="changeItemQty('${item.id}',1)" ${!canAdd?'disabled':''}>+</button>
+          </div>
+        </div>`;
+    }).join('');
+    updateSelCount();
+    const isLast = currentPersonIdx === people.length - 1;
+    document.getElementById('nextPersonBtn').textContent = isLast ? '💸 Add Tip →' : 'Next person →';
+    document.getElementById('prevPersonBtn').style.display = currentPersonIdx === 0 ? 'none' : '';
+  }
+
+  function toggleItemForPerson(id) {
+    const p = people[currentPersonIdx];
+    const item = menuItems.find(m => m.id === id);
+    const maxQty = item ? (item.qty || 1) : 1;
+    const totalClaimed = people.reduce((s, per) => s + (per.orders[id] || 0), 0);
+
+    if (p.orders[id]) {
+      // deselect
+      delete p.orders[id];
+      document.getElementById('icard_'+id).classList.remove('selected');
+      document.getElementById('iqty_'+id).style.display = 'none';
+    } else {
+      // only allow if receipt has remaining qty
+      if (totalClaimed >= maxQty) return;
+      p.orders[id] = 1;
+      document.getElementById('icard_'+id).classList.add('selected');
+      document.getElementById('iqty_'+id).style.display = 'flex';
+      document.getElementById('iqnum_'+id).textContent = 1;
+    }
+    refreshStockBadges(id);
+    updateSelCount();
+  }
+
+  function changeItemQty(id, delta) {
+    const p = people[currentPersonIdx];
+    if (!p.orders[id]) return;
+    const item = menuItems.find(m => m.id === id);
+    const maxQty = item ? (item.qty || 1) : 1;
+    const totalClaimed = people.reduce((s, per) => s + (per.orders[id] || 0), 0);
+
+    const newQty = p.orders[id] + delta;
+    if (newQty < 1) return;
+    if (delta > 0 && totalClaimed >= maxQty) return; // can't exceed receipt qty
+    p.orders[id] = newQty;
+    document.getElementById('iqnum_'+id).textContent = newQty;
+    refreshStockBadges(id);
+  }
+
+  function refreshStockBadges(id) {
+    // update stock badge + plus btn across all visible cards
+    const item = menuItems.find(m => m.id === id);
+    if (!item) return;
+    const maxQty = item.qty || 1;
+    const totalClaimed = people.reduce((s, per) => s + (per.orders[id] || 0), 0);
+    const remaining = maxQty - totalClaimed;
+    const stockEl = document.getElementById('stock_'+id);
+    const plusBtn = document.getElementById('qplus_'+id);
+    if (stockEl) {
+      stockEl.textContent = `${totalClaimed}/${maxQty} claimed`;
+      stockEl.className = 'item-stock' + (totalClaimed >= maxQty ? ' stock-empty' : '');
+    }
+    if (plusBtn) plusBtn.disabled = remaining <= 0;
+  }
+
+  function updateSelCount() {
+    const p = people[currentPersonIdx];
+    const n = Object.keys(p.orders).length;
+    // also show receipt coverage across all people
+    const totalReceiptItems = menuItems.reduce((s, item) => s + (item.qty || 1), 0);
+    const totalClaimed = menuItems.reduce((s, item) => {
+      return s + people.reduce((ps, per) => ps + (per.orders[item.id] || 0), 0);
+    }, 0);
+    document.getElementById('selCount').textContent = n === 0
+      ? `Nothing selected yet • ${totalClaimed}/${totalReceiptItems} receipt items claimed`
+      : `${n} item${n!==1?'s':''} selected • ${totalClaimed}/${totalReceiptItems} receipt items claimed`;
+  }
+
+  function nextPerson() {
+    if (currentPersonIdx < people.length - 1) {
+      currentPersonIdx++;
+      renderPersonTabs(); renderItemsForPerson();
+    } else {
+      goToTip();
+    }
+  }
+
+  function prevPerson() {
+    if (currentPersonIdx > 0) {
+      currentPersonIdx--;
+      renderPersonTabs(); renderItemsForPerson();
+    }
+  }
+
+  // ── Tip step ──
+  function goToTip() {
+    // Compute subtotals
+    subtotals = {};
+    people.forEach((p, i) => {
+      subtotals[i] = Object.keys(p.orders).reduce((s, id) => {
+        const item = menuItems.find(m => m.id === id);
+        return s + (item ? item.price * p.orders[id] : 0);
+      }, 0);
+    });
+    tipPct = 0;
+    document.getElementById('customTipInput').value = '';
+    document.querySelectorAll('.tip-btn').forEach(b => b.classList.remove('active'));
+    updateTipPreview();
+    hide('step3'); show('stepTip');
+  }
+
+  function goBackToStep3() {
+    hide('stepTip'); show('step3');
+  }
+
+  function selectTip(pct) {
+    tipPct = pct;
+    document.getElementById('customTipInput').value = pct > 0 ? pct : '';
+    document.querySelectorAll('.tip-btn').forEach(b => b.classList.remove('active'));
+    event.target.classList.add('active');
+    updateTipPreview();
+  }
+
+  function onCustomTip(val) {
+    tipPct = Math.max(0, Math.min(100, parseFloat(val) || 0));
+    document.querySelectorAll('.tip-btn').forEach(b => b.classList.remove('active'));
+    updateTipPreview();
+  }
+
+  function updateTipPreview() {
+    const grandSub = Object.values(subtotals).reduce((a,b)=>a+b,0);
+    const tipTotal = grandSub * (tipPct / 100);
+    const preview = document.getElementById('tipPreview');
+    if (tipPct === 0) {
+      preview.innerHTML = `<strong>No tip</strong> — total stays at <strong>$${grandSub.toFixed(2)}</strong>`;
+      return;
+    }
+    let lines = `<strong>${tipPct}% tip</strong> = <strong>$${tipTotal.toFixed(2)}</strong> total tip<br>`;
+    people.forEach((p, i) => {
+      const share = grandSub > 0 ? (subtotals[i] / grandSub) * tipTotal : 0;
+      lines += `${p.emoji} ${esc(p.name)}: +$${share.toFixed(2)}<br>`;
+    });
+    preview.innerHTML = lines;
+  }
+
+  // ── Bill ──
+  function buildBill() {
+    setStep(4); hide('stepTip'); show('step4');
+
+    const grandSub = Object.values(subtotals).reduce((a,b)=>a+b,0);
+    const tipTotal = grandSub * (tipPct / 100);
+    let grandTotal = 0;
+    const cards = document.getElementById('billCards');
+    cards.innerHTML = '';
+
+    // ── Reconciliation bar ──
+    const totalReceiptItems = menuItems.reduce((s, item) => s + (item.qty || 1), 0);
+    const totalReceiptValue = menuItems.reduce((s, item) => s + (item.price * (item.qty || 1)), 0);
+    const totalClaimedItems = menuItems.reduce((s, item) =>
+      s + people.reduce((ps, per) => ps + (per.orders[item.id] || 0), 0), 0);
+    const totalClaimedValue = menuItems.reduce((s, item) => {
+      const claimed = people.reduce((ps, per) => ps + (per.orders[item.id] || 0), 0);
+      return s + item.price * claimed;
+    }, 0);
+    const pct = totalReceiptItems > 0 ? Math.min(100, (totalClaimedItems / totalReceiptItems) * 100) : 0;
+    const isFull = totalClaimedItems === totalReceiptItems;
+    const isOver = totalClaimedItems > totalReceiptItems;
+    const diff = totalReceiptValue - totalClaimedValue;
+
+    const reconcileEl = document.createElement('div');
+    reconcileEl.className = 'reconcile-bar';
+    reconcileEl.innerHTML = `
+      <h3>🧾 Receipt Coverage</h3>
+      <div class="reconcile-track">
+        <div class="reconcile-fill ${isFull?'full':isOver?'over':''}" style="width:${pct}%"></div>
+      </div>
+      <div class="reconcile-stats">
+        <span class="claimed ${isFull?'full':''}">✅ $${totalClaimedValue.toFixed(2)} assigned (${totalClaimedItems}/${totalReceiptItems} items)</span>
+        <span class="receipt-total">Receipt: $${totalReceiptValue.toFixed(2)}</span>
+      </div>
+      ${!isFull && diff > 0.005
+        ? `<div class="reconcile-warning">⚠️ $${diff.toFixed(2)} unassigned — ${totalReceiptItems - totalClaimedItems} item${totalReceiptItems-totalClaimedItems!==1?'s':''} not claimed by anyone</div>`
+        : isFull
+          ? `<div class="reconcile-ok">🎉 Every item on the receipt has been assigned!</div>`
+          : ''}
+    `;
+    cards.appendChild(reconcileEl);
+
+    // ── Per-person cards ──
+    people.forEach((p, i) => {
+      const itemKeys = Object.keys(p.orders);
+      const personSub = subtotals[i] || 0;
+      const personTip = grandSub > 0 ? (personSub / grandSub) * tipTotal : 0;
+      const personTotal = personSub + personTip;
+      grandTotal += personTotal;
+
+      const rows = itemKeys.map(id => {
+        const item = menuItems.find(m => m.id === id);
+        if (!item) return '';
+        const qty = p.orders[id];
+        const sub = item.price * qty;
+        return `<div class="bill-item-row">
+          <div class="bill-item-left">${item.emoji} ${qty > 1 ? `<b>${qty}×</b> ` : ''}${esc(item.name)}</div>
+          <div class="bill-item-price">$${sub.toFixed(2)}</div>
+        </div>`;
+      }).join('');
+
+      const venmoNote = encodeURIComponent(`${p.name}'s share of the bill`);
+      const venmoAmount = personTotal.toFixed(2);
+      const venmoLink = `venmo://paycharge?txn=pay&amount=${venmoAmount}&note=${venmoNote}`;
+
+      const card = document.createElement('div');
+      card.className = 'bill-card';
+      card.innerHTML = `
+        <div class="bill-header">
+          <div class="bill-avatar">${p.emoji}</div>
+          <div class="bill-name">${esc(p.name)}</div>
+          <div class="bill-total">$${personTotal.toFixed(2)}</div>
+        </div>
+        ${itemKeys.length
+          ? `<div class="bill-items">${rows}${tipPct > 0 ? `
+            <div class="bill-item-row" style="color:var(--muted)">
+              <div class="bill-item-left">✨ Tip (${tipPct}%)</div>
+              <div class="bill-item-price" style="color:var(--muted)">+$${personTip.toFixed(2)}</div>
+            </div>` : ''}</div>`
+          : '<div class="bill-items" style="color:var(--muted);font-size:13px;font-weight:600;">Nothing ordered 🤷</div>'}
+        <div class="bill-footer">
+          <div class="bill-tip-line">Total: <span>$${personTotal.toFixed(2)}</span></div>
+          <a class="btn-venmo" href="${venmoLink}">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="white"><path d="M19.4 2C20.2 3.4 20.6 4.8 20.6 6.6c0 5.2-4.4 12-8 16H4.6L2 3.8l6.2-.6 1.4 11c1.4-2.2 3-5.8 3-8.2 0-1.4-.2-2.4-.6-3.4z"/></svg>
+            Pay on Venmo
+          </a>
+        </div>
+      `;
+      cards.appendChild(card);
+    });
+
+    document.getElementById('grandTotal').textContent = `$${grandTotal.toFixed(2)}`;
+    document.getElementById('tipSummaryLabel').textContent = tipPct > 0
+      ? `Includes ${tipPct}% tip ($${tipTotal.toFixed(2)})`
+      : 'No tip added';
+  }
+
+  // ── Reset ──
+  function resetApp() {
+    imageBase64 = null; menuItems = []; people = []; currentPersonIdx = 0; tipPct = 0; subtotals = {};
+    document.getElementById('fileInput').value = '';
+    hide('previewRow'); show('uploadZone');
+    hide('step2'); hide('step3'); hide('stepTip'); hide('step4'); hide('errorBox'); hide('spinner');
+    show('step1'); setStep(1);
+    document.getElementById('analyzeBtn').disabled = false;
+  }
+
+  function show(id) { document.getElementById(id).classList.remove('hidden'); }
+  function hide(id) { document.getElementById(id).classList.add('hidden'); }
+  function esc(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+</script>
+</body>
+</html>
