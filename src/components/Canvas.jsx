@@ -3,6 +3,69 @@ import { v4 as uuid } from 'uuid';
 import { getElementById } from '../elements/index.jsx';
 import CanvasElement from './CanvasElement.jsx';
 
+// Traditional celadon ikebana vessel — modeled after the classic suiban/vase forms
+function IkebanaVessel() {
+  return (
+    <div style={{
+      position: 'absolute',
+      bottom: 0,
+      left: '50%',
+      transform: 'translateX(-50%)',
+      pointerEvents: 'none',
+      userSelect: 'none',
+      zIndex: 0,
+    }}>
+      <svg width="140" height="130" viewBox="-70 -110 140 130" fill="none" xmlns="http://www.w3.org/2000/svg" opacity="0.28">
+        {/* Pedestal table — disk top */}
+        <ellipse cx="0" cy="-14" rx="62" ry="8" stroke="#8EAAA0" strokeWidth="0.9" />
+        <ellipse cx="0" cy="-14" rx="60" ry="6" stroke="#8EAAA0" strokeWidth="0.4" opacity="0.5" />
+        {/* Table edge band */}
+        <path d="M -62 -14 L -62 -8 Q 0 -2 62 -8 L 62 -14" stroke="#8EAAA0" strokeWidth="0.6" opacity="0.4" />
+        {/* Table column */}
+        <rect x="-7" y="-14" width="14" height="22" rx="2" stroke="#8EAAA0" strokeWidth="0.8" opacity="0.6" />
+        {/* Column decorative band */}
+        <line x1="-7" y1="-4" x2="7" y2="-4" stroke="#8EAAA0" strokeWidth="0.5" opacity="0.4" />
+        {/* Base feet — tripod */}
+        <line x1="-4" y1="8" x2="-10" y2="20" stroke="#8EAAA0" strokeWidth="0.9" strokeLinecap="round" />
+        <line x1="0" y1="8" x2="0" y2="21" stroke="#8EAAA0" strokeWidth="0.9" strokeLinecap="round" />
+        <line x1="4" y1="8" x2="10" y2="20" stroke="#8EAAA0" strokeWidth="0.9" strokeLinecap="round" />
+        {/* Foot ornaments */}
+        <circle cx="-10" cy="20" r="2" stroke="#8EAAA0" strokeWidth="0.5" opacity="0.5" />
+        <circle cx="0" cy="21" r="2" stroke="#8EAAA0" strokeWidth="0.5" opacity="0.5" />
+        <circle cx="10" cy="20" r="2" stroke="#8EAAA0" strokeWidth="0.5" opacity="0.5" />
+
+        {/* Vase body — bulbous, tapers to neck */}
+        <path d="M -26 -52 C -30 -42 -30 -26 -24 -18 L -18 -14 L 18 -14 L 24 -18 C 30 -26 30 -42 26 -52 Z"
+          stroke="#8EAAA0" strokeWidth="0.9" />
+        {/* Vase body inner shading lines */}
+        <path d="M -24 -46 C -26 -36 -26 -24 -20 -18" stroke="#8EAAA0" strokeWidth="0.4" opacity="0.4" />
+        <path d="M 24 -46 C 26 -36 26 -24 20 -18" stroke="#8EAAA0" strokeWidth="0.4" opacity="0.4" />
+        {/* Decorative body band */}
+        <path d="M -29 -36 C -14 -30 14 -30 29 -36" stroke="#8EAAA0" strokeWidth="0.5" opacity="0.35" />
+        <path d="M -29 -30 C -14 -24 14 -24 29 -30" stroke="#8EAAA0" strokeWidth="0.4" opacity="0.25" />
+        {/* Cross-hatch pattern on lower body (like image 1 vessel) */}
+        {[-22,-16,-10,-4,4,10,16,22].map((x, i) => (
+          <line key={`h${i}`} x1={x} y1="-20" x2={x} y2="-14" stroke="#8EAAA0" strokeWidth="0.3" opacity="0.3" />
+        ))}
+        {/* Neck */}
+        <rect x="-10" y="-72" width="20" height="20" rx="1" stroke="#8EAAA0" strokeWidth="0.8" />
+        {/* Neck decorative ring */}
+        <line x1="-10" y1="-66" x2="10" y2="-66" stroke="#8EAAA0" strokeWidth="0.4" opacity="0.4" />
+        <line x1="-10" y1="-60" x2="10" y2="-60" stroke="#8EAAA0" strokeWidth="0.4" opacity="0.4" />
+        {/* Neck to body shoulder */}
+        <path d="M -10 -52 C -14 -54 -16 -56 -10 -52" stroke="#8EAAA0" strokeWidth="0.5" opacity="0.3" />
+        <path d="M 10 -52 C 14 -54 16 -56 10 -52" stroke="#8EAAA0" strokeWidth="0.5" opacity="0.3" />
+        {/* Vase mouth rim */}
+        <ellipse cx="0" cy="-72" rx="11" ry="3" stroke="#8EAAA0" strokeWidth="0.8" />
+        <ellipse cx="0" cy="-72" rx="9" ry="2" stroke="#8EAAA0" strokeWidth="0.4" opacity="0.4" />
+        {/* Side handles / ears */}
+        <path d="M -26 -44 C -36 -44 -36 -32 -26 -32" stroke="#8EAAA0" strokeWidth="0.7" opacity="0.5" />
+        <path d="M 26 -44 C 36 -44 36 -32 26 -32" stroke="#8EAAA0" strokeWidth="0.7" opacity="0.5" />
+      </svg>
+    </div>
+  );
+}
+
 function GhostElement({ element, position, canvasRect }) {
   const def = getElementById(element.id);
   if (!def || !position) return null;
@@ -164,25 +227,13 @@ export default function Canvas({
         onMouseLeave={handleMouseLeave}
         onClick={handleCanvasClick}
       >
-        {/* Background: subtle kenzan (flower frog) reference — a single centered mark */}
+        {/* Vessel anchor — always visible at canvas bottom center */}
+        <IkebanaVessel />
+
+        {/* Empty state hint */}
         {elements.length === 0 && (
           <div className="canvas-empty">
-            <svg width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <circle cx="24" cy="24" r="18" stroke="#c8bfb0" strokeWidth="0.75" />
-              <circle cx="24" cy="24" r="10" stroke="#c8bfb0" strokeWidth="0.5" />
-              <circle cx="24" cy="24" r="2" fill="#c8bfb0" />
-              {Array.from({ length: 12 }, (_, i) => {
-                const a = (i * 30) * Math.PI / 180;
-                return (
-                  <line key={i}
-                    x1={24 + Math.cos(a) * 12} y1={24 + Math.sin(a) * 12}
-                    x2={24 + Math.cos(a) * 22} y2={24 + Math.sin(a) * 22}
-                    stroke="#c8bfb0" strokeWidth="0.5"
-                  />
-                );
-              })}
-            </svg>
-            <p className="canvas-empty__text">Your arrangement begins with a single element</p>
+            <p className="canvas-empty__text">Select an element, then place it above the vessel</p>
           </div>
         )}
 
